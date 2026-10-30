@@ -24,7 +24,7 @@ interface RateLimiterStrategy {
 /** A per-customer sliding-window counter rate limiter. */
 public class SlidingWindowCounterRateLimiter implements RateLimiterStrategy {
     private final Map<String, CustomerUsage> customerUsageById = new HashMap<>();
-    private final long windowDurationMillis;
+    private final Duration windowDuration;
     private final long requestLimit;
     private final Clock clock;
 
@@ -40,7 +40,7 @@ public class SlidingWindowCounterRateLimiter implements RateLimiterStrategy {
         if (requestLimit <= 0) {
             throw new IllegalArgumentException("requestLimit must be greater than zero");
         }
-        this.windowDurationMillis = windowDuration.toMillis();
+        this.windowDuration = windowDuration;
         this.requestLimit = requestLimit;
         this.clock = Objects.requireNonNull(clock, "clock");
     }
@@ -51,12 +51,12 @@ public class SlidingWindowCounterRateLimiter implements RateLimiterStrategy {
             throw new IllegalArgumentException("customerId must not be null or empty");
         }
         long nowMillis = clock.nowInstant().toEpochMilli();
+        long windowDurationMillis = windowDuration.toMillis();
         long windowNo = Math.floorDiv(nowMillis, windowDurationMillis);
-        long elapsedMillis = Math.floorMod(nowMillis, windowDurationMillis);
         CustomerUsage usage = customerUsageById.computeIfAbsent(
                 customerId, ignored -> new CustomerUsage(windowNo));
-        usage.moveToWindow(windowNo);
-
+        usage.resetWindow(windowNo);
+        long elapsedMillis = Math.floorMod(nowMillis, windowDurationMillis);
         double previousWindowWeight =
                 (windowDurationMillis - elapsedMillis) / (double) windowDurationMillis;
         double estimatedCount = usage.getCurrentWindowCount()
@@ -78,7 +78,7 @@ class CustomerUsage {
         this.windowNo = windowNo;
     }
 
-    public void moveToWindow(long newWindowNo) {
+    public void resetWindow(long newWindowNo) {
         if (newWindowNo <= windowNo) {
             return;
         }

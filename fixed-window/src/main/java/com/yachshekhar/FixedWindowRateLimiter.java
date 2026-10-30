@@ -48,7 +48,9 @@ public class FixedWindowRateLimiter implements RateLimiterStrategy {
     @Override
     public boolean rateLimit(String customerId) {
         if (customerId == null || customerId.isBlank()) throw  new IllegalArgumentException("customerId must not be null or empty");
-        long windowNo = (long) Math.ceil((double) clock.nowInstant().toEpochMilli() / this.windowDuration.toMillis());
+        long nowMillis = clock.nowInstant().toEpochMilli();
+        long windowDurationMillis = windowDuration.toMillis();
+        long windowNo = Math.floorDiv(nowMillis, windowDurationMillis);
         CustomerUsage customerUsage = customerUsageMap.computeIfAbsent(customerId,_ -> new CustomerUsage(customerId, windowNo));
         customerUsage.resetWindowIfNeeded(windowNo);
         if (customerUsage.getUsage() + 1 > this.windowSize)
