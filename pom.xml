@@ -7,11 +7,22 @@
     <groupId>com.yachshekhar</groupId>
     <artifactId>rate-limiter</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <modules>
+        <module>fixed-window</module>
+        <module>credit-based-rate-limiter</module>
+        <module>token-bucket</module>
+        <module>leaky-bucket</module>
+        <module>sliding-window-counter</module>
+    </modules>
 
     <properties>
         <maven.compiler.source>27</maven.compiler.source>
         <maven.compiler.target>27</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-    
+
 </project>
+
+
+
